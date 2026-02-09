@@ -18,6 +18,7 @@ RUN go mod tidy
 
 # Compilar aplicacion
 RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api2 .
 
 # Usar imagen ligera para compilar
 FROM alpine:3.22
@@ -27,9 +28,12 @@ WORKDIR /app
 
 # Copiar binario compilado
 COPY --from=builder /app/api ./
+COPY --from=builder /app/api2 ./
+COPY entrypoint.sh ./
+RUN chmod +x entrypoint.sh
 
 # Exponer puerto
-EXPOSE 8081
+EXPOSE 8881 8882
 
 # Comando para ejecutar la aplicacion
-CMD ["./api"]
+CMD ["./entrypoint.sh"]
