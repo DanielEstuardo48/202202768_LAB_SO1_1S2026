@@ -1,0 +1,35 @@
+#Imagen de Go
+FROM golang:1.25.alpine AS builder
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY go.mod go.sum ./
+
+# Descargar dependencias
+RUN go mod download
+
+# Copiar resto de codigo
+COPY . .
+
+#Limpiar dependencias no necesarias
+RUN go mod tidy
+
+# Compilar aplicacion
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api .
+
+# Usar imagen ligera para compilar
+FROM alpine:3.22
+
+# Directorio de trabajo
+WORKDIR /app
+
+# Copiar binario compilado
+COPY --from=builder /app/api ./
+
+# Exponer puerto
+EXPOSE 8081
+
+# Comando para ejecutar la aplicacion
+CMD ["./api"]
