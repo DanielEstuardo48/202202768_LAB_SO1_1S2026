@@ -17,8 +17,8 @@ COPY . .
 RUN go mod tidy
 
 # Compilar aplicacion
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api .
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api2 .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api1 ./API1/API1.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api2 ./API2/API2.go
 
 # Usar imagen ligera para compilar
 FROM alpine:3.22
@@ -27,9 +27,11 @@ FROM alpine:3.22
 WORKDIR /app
 
 # Copiar binario compilado
-COPY --from=builder /app/api ./
-COPY --from=builder /app/api2 ./
-COPY entrypoint.sh ./
+COPY --from=builder /app/api1 .
+COPY --from=builder /app/api2 .
+COPY entrypoint.sh .
+
+#Permisos de ejecucion para el entrypoint
 RUN chmod +x entrypoint.sh
 
 # Exponer puerto

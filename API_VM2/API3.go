@@ -29,12 +29,12 @@ func main() {
 	})
 
 	// Llamada a API1
-	app.Get("/api3/202202768/call-api3", func(c *fiber.Ctx) error {
-		resp, err := http.Get("http://localhost:8881/health")
+	app.Get("/api3/202202768/call-api1", func(c *fiber.Ctx) error {
+		resp, err := http.Get("http://192.168.122.247:8881/health")
 
 		if err != nil || resp.StatusCode != 200 {
 			return c.Status(500).JSON(fiber.Map{
-				"status":     "API1",
+				"apiname":    "API1",
 				"message":    "ERROR: The API1 located on the VM2 is not working",
 				"connection": false,
 				"carnet":     "202202768",
@@ -51,11 +51,11 @@ func main() {
 
 	// Llamada a API2
 	app.Get("/api3/202202768/call-api2", func(c *fiber.Ctx) error {
-		resp, err := http.Get("http://localhost:8882/health")
+		resp, err := http.Get("http://192.168.122.247:8882/health")
 
 		if err != nil || resp.StatusCode != 200 {
 			return c.Status(500).JSON(fiber.Map{
-				"status":     "API2",
+				"apiname":    "API2",
 				"message":    "ERROR: The API2 located on the VM2 is not working",
 				"connection": false,
 				"carnet":     "202202768",

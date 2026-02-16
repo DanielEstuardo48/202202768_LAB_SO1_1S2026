@@ -17,7 +17,7 @@ COPY . .
 RUN go mod tidy
 
 # Compilar aplicacion
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/api3 API3.go
 
 # Usar imagen ligera para compilar
 FROM alpine:3.22
@@ -26,10 +26,10 @@ FROM alpine:3.22
 WORKDIR /app
 
 # Copiar binario compilado
-COPY --from=builder /app/api ./
+COPY --from=builder /app/api3 .
 
 # Exponer puerto
 EXPOSE 8883
 
 # Comando para ejecutar la aplicacion
-CMD ["./api"]
+CMD ["./api3"]
