@@ -30,7 +30,7 @@ func main() {
 
 	// Llamada a API2
 	app.Get("/api1/202202768/call-api2", func(c *fiber.Ctx) error {
-		resp, err := http.Get("http://192.168.122.247:8882/health")
+		resp, err := http.Get("http://192.168.122.90:8882/health")
 
 		if err != nil || resp.StatusCode != 200 {
 			return c.Status(500).JSON(fiber.Map{
@@ -51,7 +51,7 @@ func main() {
 
 	// Llamada a API3
 	app.Get("/api1/202202768/call-api3", func(c *fiber.Ctx) error {
-		resp, err := http.Get("http://192.168.122.187:8883/health")
+		resp, err := http.Get("http://192.168.122.79:8883/health")
 
 		if err != nil || resp.StatusCode != 200 {
 			return c.Status(500).JSON(fiber.Map{
