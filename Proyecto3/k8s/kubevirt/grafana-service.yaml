@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: mumnk8s
+spec:
+  selector:
+    app: grafana-vm
+  ports:
+  - port: 3000
+    targetPort: 3000
+  type: LoadBalancer

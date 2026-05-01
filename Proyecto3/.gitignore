@@ -1,0 +1,38 @@
+# Rust - compilados y dependencias
+rust-api/target/
+rust-api/Cargo.lock
+
+# Go - binarios compilados
+go-client/go-client
+go-server/go-server
+go-consumer/go-consumer
+
+# Binarios descargados
+oras_1.1.0_linux_amd64.tar.gz
+oras_1.1.0_linux_amd64/
+
+# Docker
+.docker/
+
+# Locust - datos generados
+locust/__pycache__/
+locust/*.pyc
+
+# Variables de entorno
+.env
+*.env
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: containerd-config
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: containerd-config
+  template:
+    metadata:
+      labels:
+        app: containerd-config
+    spec:
+      hostPID: true
+      hostNetwork: true
+      initContainers:
+      - name: config-containerd
+        image: alpine:latest
+        securityContext:
+          privileged: true
+        command:
+        - sh
+        - -c
+        - |
+          mkdir -p /etc/containerd/certs.d/34.29.32.190:5000
+          cat > /etc/containerd/certs.d/34.29.32.190:5000/hosts.toml << EOF
+          server = "http://34.29.32.190:5000"
+          [host."http://34.29.32.190:5000"]
+            capabilities = ["pull", "resolve"]
+            skip_verify = true
+          EOF
+          nsenter -t 1 -m -u -i -n -p -- systemctl restart containerd
+        volumeMounts:
+        - name: etc-containerd
+          mountPath: /etc/containerd
+      containers:
+      - name: pause
+        image: gcr.io/google_containers/pause:3.1
+      volumes:
+      - name: etc-containerd
+        hostPath:
+          path: /etc/containerd

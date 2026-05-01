@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: download-oci-artifact
+  namespace: mumnk8s
+spec:
+  template:
+    spec:
+      containers:
+      - name: download-artifact
+        image: ghcr.io/oras-project/oras:v1.1.0
+        command:
+        - sh
+        - -c
+        - |
+          cd /tmp &&
+          oras pull 34.29.32.190:5000/config/countries:latest \
+            --plain-http &&
+          echo "=== Artifact descargado desde Zot ===" &&
+          cat /tmp/locust/countries.json &&
+          echo "=== Pais asignado ===" &&
+          cat /tmp/locust/countries.json | grep assigned_country
+      restartPolicy: Never

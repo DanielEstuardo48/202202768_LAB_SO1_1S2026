@@ -1,0 +1,42 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: grafana-vm
+  namespace: mumnk8s
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        app: grafana-vm
+    spec:
+      domain:
+        cpu:
+          cores: 2
+        memory:
+          guest: 2Gi
+        devices:
+          disks:
+          - name: rootdisk
+            disk:
+              bus: virtio
+          - name: cloudinit
+            disk:
+              bus: virtio
+          interfaces:
+          - name: default
+            masquerade: {}
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+      - name: rootdisk
+        persistentVolumeClaim:
+          claimName: grafana-disk
+      - name: cloudinit
+        cloudInitNoCloud:
+          userData: |
+            #cloud-config
+            password: grafana123
+            chpasswd: { expire: False }
+            ssh_pwauth: True

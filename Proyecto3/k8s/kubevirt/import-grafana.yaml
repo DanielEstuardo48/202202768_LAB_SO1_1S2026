@@ -1,0 +1,16 @@
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: grafana-disk
+  namespace: mumnk8s
+spec:
+  source:
+    registry:
+      url: "docker://quay.io/containerdisks/fedora:latest"
+  pvc:
+    accessModes:
+    - ReadWriteOnce
+    storageClassName: standard
+    resources:
+      requests:
+        storage: 10Gi

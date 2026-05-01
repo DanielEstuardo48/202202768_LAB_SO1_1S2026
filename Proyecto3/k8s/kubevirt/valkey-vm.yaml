@@ -1,0 +1,42 @@
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: valkey-vm
+  namespace: mumnk8s
+spec:
+  runStrategy: Always
+  template:
+    metadata:
+      labels:
+        app: valkey-vm
+    spec:
+      domain:
+        cpu:
+          cores: 1
+        memory:
+          guest: 1Gi
+        devices:
+          disks:
+          - name: rootdisk
+            disk:
+              bus: virtio
+          - name: cloudinit
+            disk:
+              bus: virtio
+          interfaces:
+          - name: default
+            bridge: {}
+      networks:
+      - name: default
+        pod: {}
+      volumes:
+      - name: rootdisk
+        persistentVolumeClaim:
+          claimName: valkey-disk
+      - name: cloudinit
+        cloudInitNoCloud:
+          userData: |
+            #cloud-config
+            password: valkey123
+            chpasswd: { expire: False }
+            ssh_pwauth: True

@@ -1,0 +1,64 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  valkey:
+    image: valkey/valkey:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  go-server:
+    build: ./go-server
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+
+  go-client:
+    build: ./go-client
+    ports:
+      - "8081:8081"
+    depends_on:
+      - go-server
+
+  api-rust:
+    build: ./rust-api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - go-client
+
+  go-consumer:
+    build: ./go-consumer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=redis-datasource
+    depends_on:
+      - valkey

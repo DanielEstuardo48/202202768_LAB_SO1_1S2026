@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rust-api
+  namespace: mumnk8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rust-api
+  template:
+    metadata:
+      labels:
+        app: rust-api
+    spec:
+      containers:
+      - name: rust-api
+        image: 34.29.32.190:5000/rust-api:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rust-api
+  namespace: mumnk8s
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
+spec:
+  type: ClusterIP
+  selector:
+    app: rust-api
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP

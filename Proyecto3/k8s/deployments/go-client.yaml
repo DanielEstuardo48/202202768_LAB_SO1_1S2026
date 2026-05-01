@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-client
+  namespace: mumnk8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: go-client
+  template:
+    metadata:
+      labels:
+        app: go-client
+    spec:
+      containers:
+      - name: go-client
+        image: 34.29.32.190:5000/go-client:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "250m"
+          limits:
+            memory: "256Mi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: go-client
+  namespace: mumnk8s
+spec:
+  selector:
+    app: go-client
+  ports:
+  - port: 8081
+    targetPort: 8081
