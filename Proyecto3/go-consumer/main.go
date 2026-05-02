@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 	"os"
+	"strconv"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/valkey-io/valkey-go"
@@ -40,7 +41,6 @@ func connectValkey() valkey.Client {
 	if addr == "" {
 		addr = "valkey:6379"
 	}
-	
 	client, err := valkey.NewClient(valkey.ClientOption{
 		InitAddress: []string{addr},
 	})
@@ -51,9 +51,7 @@ func connectValkey() valkey.Client {
 	return client
 }
 
-// Recalcula max, min y moda de una lista y los guarda como keys simples
 func recalcStats(ctx context.Context, client valkey.Client, listKey, maxKey, minKey, modaKey string) {
-	// Obtener todos los valores de la lista
 	result, err := client.Do(ctx, client.B().Lrange().Key(listKey).Start(0).Stop(-1).Build()).AsStrSlice()
 	if err != nil || len(result) == 0 {
 		return
@@ -77,7 +75,6 @@ func recalcStats(ctx context.Context, client valkey.Client, listKey, maxKey, min
 		}
 	}
 
-	// Calcular moda
 	moda := 0
 	maxFreq := 0
 	for val, f := range freq {
@@ -87,7 +84,6 @@ func recalcStats(ctx context.Context, client valkey.Client, listKey, maxKey, min
 		}
 	}
 
-	// Guardar resultados como keys simples para que Grafana pueda leerlos
 	client.Do(ctx, client.B().Set().Key(maxKey).Value(fmt.Sprintf("%d", maxVal)).Build())
 	client.Do(ctx, client.B().Set().Key(minKey).Value(fmt.Sprintf("%d", minVal)).Build())
 	client.Do(ctx, client.B().Set().Key(modaKey).Value(fmt.Sprintf("%d", moda)).Build())
@@ -103,7 +99,7 @@ func saveToValkey(client valkey.Client, report WarReportMessage) {
 	data, _ := json.Marshal(report)
 	client.Do(ctx, client.B().Set().Key("reports:last:"+report.Country).Value(string(data)).Build())
 
-	// 3. Timeline — listas separadas para aviones y barcos
+	// 3. Timeline listas separadas para aviones y barcos
 	planesTimelineKey := "timeline:planes:" + report.Country
 	shipsTimelineKey := "timeline:ships:" + report.Country
 
@@ -115,19 +111,32 @@ func saveToValkey(client valkey.Client, report WarReportMessage) {
 		Element(fmt.Sprintf("%d", report.WarshipsInWater)).Build())
 	client.Do(ctx, client.B().Ltrim().Key(shipsTimelineKey).Start(0).Stop(99).Build())
 
-	// 4. Listas globales de valores para calcular estadísticas
+	// 4. Sorted sets con timestamp para serie temporal en Grafana
+	//ts := float64(time.Now().UnixMilli())
+	entry := fmt.Sprintf("%d:%d", time.Now().UnixMilli(), report.WarplanesInAir)
+	client.Do(ctx, client.B().Lpush().Key("ts:planes:"+report.Country).Element(entry).Build())
+	client.Do(ctx, client.B().Ltrim().Key("ts:planes:"+report.Country).Start(0).Stop(199).Build())
+
+	entry = fmt.Sprintf("%d:%d", time.Now().UnixMilli(), report.WarshipsInWater)
+	client.Do(ctx, client.B().Lpush().Key("ts:ships:"+report.Country).Element(entry).Build())
+	client.Do(ctx, client.B().Ltrim().Key("ts:ships:"+report.Country).Start(0).Stop(199).Build())
+	// Mantener solo los ultimos 200 registros
+	client.Do(ctx, client.B().Zremrangebyrank().Key("ts:planes:"+report.Country).Start(0).Stop(-201).Build())
+	client.Do(ctx, client.B().Zremrangebyrank().Key("ts:ships:"+report.Country).Start(0).Stop(-201).Build())
+
+	// 5. Listas globales para estadísticas
 	client.Do(ctx, client.B().Rpush().Key("stats:warplanes").
 		Element(fmt.Sprintf("%d", report.WarplanesInAir)).Build())
 	client.Do(ctx, client.B().Rpush().Key("stats:warships").
 		Element(fmt.Sprintf("%d", report.WarshipsInWater)).Build())
 
-	// 5. Sorted sets para top países
+	// 6. Sorted sets para top países
 	client.Do(ctx, client.B().Zincrby().Key("top:warplanes").
 		Increment(float64(report.WarplanesInAir)).Member(report.Country).Build())
 	client.Do(ctx, client.B().Zincrby().Key("top:warships").
 		Increment(float64(report.WarshipsInWater)).Member(report.Country).Build())
 
-	// 6. Recalcular y guardar max, min, moda como keys simples
+	// 7. Recalcular max, min, moda
 	recalcStats(ctx, client,
 		"stats:warplanes",
 		"stat:planes:max",
@@ -141,7 +150,7 @@ func saveToValkey(client valkey.Client, report WarReportMessage) {
 		"stat:ships:moda",
 	)
 
-	// 7. Guardar nombre del país asignado como key fija
+	// 8. País asignado
 	client.Do(ctx, client.B().Set().Key("assigned:country").Value("GTM").Build())
 
 	log.Printf("Guardado: país=%s aviones=%d barcos=%d",
